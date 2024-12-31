@@ -476,12 +476,39 @@ def test_funko_crawler():
         print(url)
 
 
+def test_connection_to_sitemap(url):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        print(f"Connected to {url}")
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        return False
+    
 # Example usage
 if __name__ == '__main__':
     # test_boxlunch_crawler()
     # test_loungefly_crawler()
 
     # cannot access due to cloudflare security, check the scratch folder
-    test_funko_crawler()
+    #test_funko_crawler()
+
+    sitemap_urls_test = [
+        'https://www.boxlunch.com/sitemap_index.xml',
+        'https://www.loungefly.com/csitemap_index.xml',
+        'https://www.loungefly.com/csitemap_index_en_CA.xml',
+        'https://www.funko.com/csitemap_product.xml',
+        'https://www.hottopic.com/sitemap_index.xml',
+        'http://thematic-id-6138-e.brcdn.com/fetch_thematic/6138/kwudockr89/prod/desktop/v1/th-sitemap-0.xml.gz'
+    ]
+
+    for url in sitemap_urls_test:
+        test_connection_to_sitemap(url)
 
     
