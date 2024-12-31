@@ -2,8 +2,6 @@ import azure.functions as func
 import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient
-from azure.data.tables import TableServiceClient, TableClient
-from azure.core.exceptions import AzureError
 import json
 import os
 from crawl_with_sitemap import BoxLunchSitemapCrawler
@@ -120,7 +118,7 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
 
             logging.info(f"[{domainId}] Processing Sitemap URL: {baseUrl}/{sitemapUrl} has completed.")
                     
-            # TODO: Bulk Upload to Either Cosmos or Table Storage -- Practice Dedup so we don't go over the data twice. 
+            
 
 
     name = req.params.get('name')
