@@ -4,7 +4,7 @@ import azure.functions as func
 from azure.cosmos import CosmosClient
 import json
 import os
-from crawl_with_sitemap import BoxLunchSitemapCrawler
+from ProductSitemapURLFetcher import ProductSitemapURLFetcher
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -63,6 +63,8 @@ def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
 
 def process_sitemap(domainMetadata):
 
+    res = []
+
     # go thru each of the domains and print them out
     for metadata in domainMetadata:
         domainId = metadata['id']
@@ -71,12 +73,45 @@ def process_sitemap(domainMetadata):
 
         logging.info(f"Processing Domain: {domainId} with Base URL: {baseUrl}")
 
+        domainInfo = {
+            'id': domainId,
+            'base_url': baseUrl,
+            'sitemap_urls': sitemapURLs
+        }
+
         for sitemapUrl in sitemapURLs:
             logging.info(f"[{domainId}] Processing Sitemap URL: {sitemapUrl}")
 
-            # productURLs = get_sitemap_urls(domainId,baseUrl, sitemapUrl)
+            # create the config object
+            urlFetcherConfig = {
+                'base_url': baseUrl,
+                'sitemap_url': sitemapUrl,
+                'namespace': {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'},
+                'headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                }
+            }
+            
+            logging.info(f"[{domainId}] URL Fetcher Config: {urlFetcherConfig}")
 
-            logging.info(f"[{domainId}] Sitemap URL: {sitemapUrl} has completed processing")
+            # Create the Product Sitemap URL Fetcher
+            productSitemapURLFetcher = ProductSitemapURLFetcher(urlFetcherConfig)
+
+            # Get all of the product sitemap URLs
+            productUrls = productSitemapURLFetcher.fetch_product_urls()
+
+            
+
+            logging.info(f"[{domainId}] Sitemap URL: {sitemapUrl} has completed processing.\nFound {len(productUrls)} products")
+
+            # Add the product URLs to the domain info
+            domainInfo['product_urls'] = productUrls
+
+        res.append(domainInfo)
+
+    return res
+
+
 
     
 
@@ -95,10 +130,10 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
         domainMetadata = get_cosmos_items(container, query_id)
 
         # Process in the Domain Metadata
-        process_sitemap(domainMetadata)
+        result = process_sitemap(domainMetadata)
 
         # Return response
-        return func.HttpResponse(f"This HTTP triggered function executed successfully.")
+        return func.HttpResponse(json.dumps(result), mimetype="application/json")
 
     except Exception as e:
         logging.error(f"Error processing domain metadata: {str(e)}")

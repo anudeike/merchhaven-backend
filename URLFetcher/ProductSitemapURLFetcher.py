@@ -53,6 +53,18 @@ class ProductSitemapURLFetcher:
         logging.info(f"Found {len(productUrls)} products")
 
         return productUrls
+    
+    def fetch_product_urls(self):
+        """
+        Fetch all of the product URLs
+        
+        Returns:
+            list: URLs of products
+        """
+        productSitemapUrls = self.get_product_sitemap_urls()
+        productUrls = self.get_product_urls(productSitemapUrls)
+
+        return productUrls
 
 
 
@@ -67,8 +79,5 @@ def tests():
 
     crawler = ProductSitemapURLFetcher(boxLunchConfig)
 
-    productSitemapUrls = crawler.get_product_sitemap_urls()
-
-    productUrls = crawler.get_product_urls(productSitemapUrls)
-
-    pass
+    # one function to do all of the work
+    crawler.fetch_product_urls()
