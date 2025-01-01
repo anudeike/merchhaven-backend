@@ -127,24 +127,11 @@ async def upsert_url_metadata(rows, mode="merge"):
         except AzureError as e:
             logging.info(f"Table already exists: {str(e)}")
         
-        await upsert(rows[0], table, mode=mode)
-        await upsert(rows[1], table, mode=mode)
-        await upsert(rows[2], table, mode=mode)
-        await upsert(rows[3], table, mode=mode)
+        # create a list of tasks to upsert the entities
+        tasks = [upsert(row, table, mode=mode) for row in rows]
 
-
-    
-
-    
-    
-        
-
-
-    # Create a list of tasks to upsert the entities
-    # tasks = [upsert(row, table_client, mode=mode) for row in rows]
-
-    # Wait for all tasks to complete
-    #await asyncio.gather(*tasks)
+        # wait for all tasks to complete
+        await asyncio.gather(*tasks)
     
 
 def upload_to_azure_table(productUrls):
