@@ -2,12 +2,14 @@ import azure.functions as func
 import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient
-from azure.data.tables import TableServiceClient, TableClient
+from azure.data.tables.aio import TableClient
 from azure.core.exceptions import AzureError
 import json
+import asyncio
 import os
 from ProductSitemapURLFetcher import ProductSitemapURLFetcher
 from utilites._util_functions import url_to_hash
+from datetime import datetime
 
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
@@ -69,42 +71,98 @@ def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
 Azure Table Storage functions
 """
 
-def get_table_client() -> TableClient:
-    """
-    Creates and returns an Azure Table Storage client.
-    
-    Returns:
-        TableClient: Azure Table Storage client
-    """
-    connection_string = os.environ["AzureTableStorageConnection"]
-    table_name = os.environ["TableName"]
-    
-    # Create the table if it doesn't exist
-    table_service = TableServiceClient.from_connection_string(connection_string)
-    try:
-        table_client = table_service.create_table(table_name)
-    except Exception:
-        table_client = table_service.get_table_client(table_name)
-    return table_client
 
-def prepare_entities(urls):
+
+def prepare_rows(urls):
     """
     Prepares the entities for batch upload by ensuring required fields.
     
     Args:
-        data: List of dictionaries containing the data to upload
+        urls: List of urls that have been fetched
         
     Returns:
         List of prepared entities
     """
-    entities = []
-    for i, item in enumerate(data):
-        if 'PartitionKey' not in item or 'RowKey' not in item:
-            # If PartitionKey and RowKey are not provided, generate them
-            item['PartitionKey'] = str(i // 1000)  # Group items into partitions of 1000
-            item['RowKey'] = str(i)
-        entities.append(item)
-    return entities
+
+    rows = []
+    for url in urls:
+        currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        hash = url_to_hash(url)
+        # initialize a new row
+        rows.append({
+            "PartitionKey": str(hash[:5]),
+            "RowKey": str(hash),
+            "URL": str(url),
+            "timeCreated": str(currentTime),
+            "lastFetchTime": str(currentTime),
+            "lastCrawlTime": "",
+            "s3Link": "",
+            "depth": 0
+        })
+
+    return rows
+
+async def upsert(row, table_client, mode):
+    try:
+        await table_client.upsert_entity(row, mode=mode)
+        logging.info(f"Upserted entity with URL: {row['RowKey']}")
+    except Exception as e:
+        logging.error(f"Error upserting entity with URL: {row['RowKey']}: {str(e)}")
+
+async def upsert_url_metadata(rows, mode="merge"):
+
+    # we need to get the table client here
+    table = TableClient.from_connection_string(
+        os.environ["AzureTableStorageConnectionString"],
+        os.environ["TableName"]
+    )
+
+    # find the type of object table client is
+    logging.info(type(table))
+
+    async with table:
+        try:
+            await table.create_table()
+        except AzureError as e:
+            logging.info(f"Table already exists: {str(e)}")
+        
+        await upsert(rows[0], table, mode=mode)
+        await upsert(rows[1], table, mode=mode)
+        await upsert(rows[2], table, mode=mode)
+        await upsert(rows[3], table, mode=mode)
+
+
+    
+
+    
+    
+        
+
+
+    # Create a list of tasks to upsert the entities
+    # tasks = [upsert(row, table_client, mode=mode) for row in rows]
+
+    # Wait for all tasks to complete
+    #await asyncio.gather(*tasks)
+    
+
+def upload_to_azure_table(productUrls):
+
+    # Prepare the entities
+    rows = prepare_rows(productUrls)
+
+    # upsert the entities to Azure Table Storage
+    try:
+        asyncio.run(upsert_url_metadata(rows=rows))
+    except Exception as e:
+        logging.error(f"Async Function Error: {str(e)}")
+
+    # log the number of entities uploaded
+    logging.info(f"Uploaded {len(rows[:100])} URLs to Azure Table Storage")
+
+
+
 
 def process_sitemap(domainMetadata):
 
@@ -149,18 +207,6 @@ def process_sitemap(domainMetadata):
     return productUrlsResult
 
 
-def upload_to_azure_table(productUrls):
-
-    # Create the Azure Table Storage client
-    table_client = get_table_client()
-
-    # Prepare the entities
-    entities = prepare_entities(productUrls)
-
-    # Upload the entities to Azure Table Storage
-    table_client.upsert_entities(entities)
-    pass
-    
 
 @app.route(route="URLFetcherFunc")
 def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
@@ -181,10 +227,16 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f"Found {len(productUrlsDiscovered)} total product URLs")
 
         # Upload to Azure Table Storage
-        # upload_to_azure_table(productUrlsDiscovered)
+        upload_to_azure_table(productUrlsDiscovered)
+
+        response = {
+            "Product Urls Discovered": len(productUrlsDiscovered),
+            "Sample Product Urls": productUrlsDiscovered[:10],
+            "timeCreated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
 
         # Return response
-        return func.HttpResponse(json.dumps(productUrlsDiscovered), mimetype="application/json")
+        return func.HttpResponse(json.dumps(response), mimetype="application/json")
 
     except Exception as e:
         logging.error(f"Error processing domain metadata: {str(e)}")
