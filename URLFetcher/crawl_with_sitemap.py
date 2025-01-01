@@ -3,6 +3,13 @@ import xml.etree.ElementTree as ET
 import logging
 from urllib.parse import urljoin, urlparse
 
+"""
+
+NON FUNCTIONAL FILE
+
+DO NOT USE!!
+
+"""
 class BoxLunchSitemapCrawler:
     def __init__(self, base_url='https://www.boxlunch.com', sitemap_url='sitemap_index.xml', namespace={'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}):
         """

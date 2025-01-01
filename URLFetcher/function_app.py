@@ -2,9 +2,13 @@ import azure.functions as func
 import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient
+from azure.data.tables import TableServiceClient, TableClient
+from azure.core.exceptions import AzureError
 import json
 import os
 from ProductSitemapURLFetcher import ProductSitemapURLFetcher
+from utilites._util_functions import url_to_hash
+
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -61,9 +65,50 @@ def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
         logging.error(f"Error retrieving items from CosmosDB: {str(e)}")
         raise
 
+"""
+Azure Table Storage functions
+"""
+
+def get_table_client() -> TableClient:
+    """
+    Creates and returns an Azure Table Storage client.
+    
+    Returns:
+        TableClient: Azure Table Storage client
+    """
+    connection_string = os.environ["AzureTableStorageConnection"]
+    table_name = os.environ["TableName"]
+    
+    # Create the table if it doesn't exist
+    table_service = TableServiceClient.from_connection_string(connection_string)
+    try:
+        table_client = table_service.create_table(table_name)
+    except Exception:
+        table_client = table_service.get_table_client(table_name)
+    return table_client
+
+def prepare_entities(urls):
+    """
+    Prepares the entities for batch upload by ensuring required fields.
+    
+    Args:
+        data: List of dictionaries containing the data to upload
+        
+    Returns:
+        List of prepared entities
+    """
+    entities = []
+    for i, item in enumerate(data):
+        if 'PartitionKey' not in item or 'RowKey' not in item:
+            # If PartitionKey and RowKey are not provided, generate them
+            item['PartitionKey'] = str(i // 1000)  # Group items into partitions of 1000
+            item['RowKey'] = str(i)
+        entities.append(item)
+    return entities
+
 def process_sitemap(domainMetadata):
 
-    res = []
+    productUrlsResult = []
 
     # go thru each of the domains and print them out
     for metadata in domainMetadata:
@@ -72,12 +117,6 @@ def process_sitemap(domainMetadata):
         sitemapURLs = metadata['sitemap_urls']
 
         logging.info(f"Processing Domain: {domainId} with Base URL: {baseUrl}")
-
-        domainInfo = {
-            'id': domainId,
-            'base_url': baseUrl,
-            'sitemap_urls': sitemapURLs
-        }
 
         for sitemapUrl in sitemapURLs:
             logging.info(f"[{domainId}] Processing Sitemap URL: {sitemapUrl}")
@@ -100,19 +139,27 @@ def process_sitemap(domainMetadata):
             # Get all of the product sitemap URLs
             productUrls = productSitemapURLFetcher.fetch_product_urls()
 
-            
-
             logging.info(f"[{domainId}] Sitemap URL: {sitemapUrl} has completed processing.\nFound {len(productUrls)} products")
 
-            # Add the product URLs to the domain info
-            domainInfo['product_urls'] = productUrls
-
-        res.append(domainInfo)
-
-    return res
+            # extend the list of product URLs
+            productUrlsResult.extend(productUrls)
 
 
 
+    return productUrlsResult
+
+
+def upload_to_azure_table(productUrls):
+
+    # Create the Azure Table Storage client
+    table_client = get_table_client()
+
+    # Prepare the entities
+    entities = prepare_entities(productUrls)
+
+    # Upload the entities to Azure Table Storage
+    table_client.upsert_entities(entities)
+    pass
     
 
 @app.route(route="URLFetcherFunc")
@@ -130,10 +177,14 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
         domainMetadata = get_cosmos_items(container, query_id)
 
         # Process in the Domain Metadata
-        result = process_sitemap(domainMetadata)
+        productUrlsDiscovered = process_sitemap(domainMetadata)
+        logging.info(f"Found {len(productUrlsDiscovered)} total product URLs")
+
+        # Upload to Azure Table Storage
+        # upload_to_azure_table(productUrlsDiscovered)
 
         # Return response
-        return func.HttpResponse(json.dumps(result), mimetype="application/json")
+        return func.HttpResponse(json.dumps(productUrlsDiscovered), mimetype="application/json")
 
     except Exception as e:
         logging.error(f"Error processing domain metadata: {str(e)}")

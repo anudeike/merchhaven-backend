@@ -2,6 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 import logging
 from urllib.parse import urljoin, urlparse
+import hashlib
 
 class CrawlerUtil:
     def __init__(self, logger):
@@ -46,4 +47,5 @@ class CrawlerUtil:
         except ET.ParseError as e:
             self.logger.error(f"Error parsing sitemap XML: {e}")
             return []
+        
         
