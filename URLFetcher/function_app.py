@@ -29,7 +29,7 @@ def get_cosmos_client():
     
     return container
 
-def get_cosmos_items(container, query_id=None, max_items=100):
+def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
     """
     Retrieves items from CosmosDB.
     
@@ -49,58 +49,57 @@ def get_cosmos_items(container, query_id=None, max_items=100):
                 enable_cross_partition_query=True
             ))
         else:
-            items = list(container.read_all_items(max_item_count=max_items))
-        
+            #  only select those that are enabled
+            query = f"SELECT * FROM c WHERE c.isEnabled = {str.lower(str(isEnabled))}"
+            items = list(container.query_items(
+                query=query,
+                enable_cross_partition_query=True
+            ))
         return [dict(item) for item in items]
     
     except Exception as e:
         logging.error(f"Error retrieving items from CosmosDB: {str(e)}")
         raise
 
-@app.route(route="URLFetcherFunc")
-def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    # Initialize Cosmos client
-    container = get_cosmos_client()
-
-    # Get query parameters (optional)
-    query_id = req.params.get('query')
-
-    # Get items from CosmosDB
-    results = get_cosmos_items(container, query_id)
+def process_sitemap(domainMetadata):
 
     # go thru each of the domains and print them out
-    for result in results:
-        domainId = result['id']
-        baseUrl = result['base_url']
-        sitemapURLs = result['sitemap_urls']
+    for metadata in domainMetadata:
+        domainId = metadata['id']
+        baseUrl = metadata['base_url']
+        sitemapURLs = metadata['sitemap_urls']
 
         logging.info(f"Processing Domain: {domainId} with Base URL: {baseUrl}")
 
         for sitemapUrl in sitemapURLs:
-            logging.info(f"[{domainId}] Processing Sitemap URL: {baseUrl}/{sitemapUrl}")
+            logging.info(f"[{domainId}] Processing Sitemap URL: {sitemapUrl}")
 
             # productURLs = get_sitemap_urls(domainId,baseUrl, sitemapUrl)
 
-            logging.info(f"[{domainId}] Processing Sitemap URL: {baseUrl}/{sitemapUrl} has completed.")
-                    
-            
+            logging.info(f"[{domainId}] Sitemap URL: {sitemapUrl} has completed processing")
 
+    
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
+@app.route(route="URLFetcherFunc")
+def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
 
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+    try:
+        # Initialize Cosmos client
+        container = get_cosmos_client()
+
+        # Get query parameters
+        query_id = req.params.get('query')
+
+        # Get items from CosmosDB
+        domainMetadata = get_cosmos_items(container, query_id)
+
+        # Process in the Domain Metadata
+        process_sitemap(domainMetadata)
+
+        # Return response
+        return func.HttpResponse(f"This HTTP triggered function executed successfully.")
+
+    except Exception as e:
+        logging.error(f"Error processing domain metadata: {str(e)}")
+        return func.HttpResponse(f"Error processing domain metadata: {str(e)}", status_code=500)
