@@ -72,5 +72,3 @@ def tests():
     productUrls = crawler.get_product_urls(productSitemapUrls)
 
     pass
-
-tests()

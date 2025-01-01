@@ -57,39 +57,6 @@ def get_cosmos_items(container, query_id=None, max_items=100):
         logging.error(f"Error retrieving items from CosmosDB: {str(e)}")
         raise
 
-def get_sitemap_urls(domainId, baseUrl, sitemapUrl):
-    """
-    Retrieves sitemap URLs from a base URL.
-    
-    Args:
-        baseUrl (str): Base URL of the sitemap
-        sitemapURLs (list): List of sitemap URLs to retrieve
-
-    Returns:
-        list: List of sitemap URLs
-    """
-
-    if domainId == "boxlunch":
-        crawler = BoxLunchSitemapCrawler(baseUrl, sitemap_url=sitemapUrl)
-
-        logging.info(f"{domainId} Crawler has been created with the following parameters: {crawler.__dict__}")
-
-        # crawl the product sitemaps
-        all_urls = crawler.crawl_product_sitemaps()
-
-        logging.info(f"Total URLs discovered: {len(all_urls)}")
-
-        # filter the product URLs
-        product_urls = crawler.filter_product_urls(all_urls)
-
-        logging.info(f"Product URLs: {len(product_urls)}")
-
-        return product_urls
-        
-    else:
-        logging.warning(f"Processed 0 URLs for Unknown domain: {domainId}. This domain is not ready for processing.")
-        return []
-
 @app.route(route="URLFetcherFunc")
 def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
