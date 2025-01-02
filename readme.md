@@ -19,21 +19,15 @@
 
 ## About the Project
 
-Provide a brief overview of your backend project. What problem does it solve? Why is it useful?
+This is the backend for the upcoming application "MerchHaven"! MerchHaven provides you with the best* deals for fandom merchanise and novelty items whenever and wherever you shop!
+We scan the web to keep you an informed buyer making informed decisions!
 
-Example:  
-This backend application provides RESTful APIs for managing [specific use case]. It is built using [framework/technology] and supports [key features].
-
+This backend is the brains behind our operations, running behind the scenes to crawl the internet and gather the most up-to-date information about your favorite products!
 ---
 
 ## Features
 
-- **Feature 1:** Brief description
-- **Feature 2:** Brief description
-- **Feature 3:** Brief description
-
-Highlight any unique or important functionalities.
-
+<TO ADD LATER>
 ---
 
 ## Getting Started
