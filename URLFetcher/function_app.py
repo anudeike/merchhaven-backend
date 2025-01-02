@@ -67,11 +67,6 @@ def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
         logging.error(f"Error retrieving items from CosmosDB: {str(e)}")
         raise
 
-"""
-Azure Table Storage functions
-"""
-
-
 
 def prepare_rows(urls):
     """
@@ -91,7 +86,7 @@ def prepare_rows(urls):
         hash = url_to_hash(url)
         # initialize a new row
         rows.append({
-            "PartitionKey": str(hash[:5]),
+            "PartitionKey": str(hash[:3]),
             "RowKey": str(hash),
             "URL": str(url),
             "timeCreated": str(currentTime),
