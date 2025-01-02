@@ -67,7 +67,7 @@ class ProductSitemapURLFetcher:
         return productUrls
 
 
-
+# TODO: Add tests
 def tests():
 
     boxLunchConfig = {

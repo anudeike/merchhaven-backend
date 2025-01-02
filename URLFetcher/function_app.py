@@ -11,7 +11,6 @@ from ProductSitemapURLFetcher import ProductSitemapURLFetcher
 from utilites._util_functions import url_to_hash
 from datetime import datetime
 
-
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 """
@@ -98,6 +97,8 @@ def prepare_rows(urls):
 
     return rows
 
+# this is a generic upsert function
+# TODO: Move this into a utility file
 async def upsert(row, table_client, mode):
     try:
         await table_client.upsert_entity(row, mode=mode)
