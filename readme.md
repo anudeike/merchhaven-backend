@@ -19,7 +19,7 @@
 
 ## About the Project
 
-This is the backend for the upcoming application "MerchHaven"! MerchHaven provides you with the best* deals for fandom merchanise and novelty items whenever and wherever you shop!
+This is the backend for the upcoming application "MerchHaven"! MerchHaven provides you with the best deals for the rarest fandom merchanise and novelty items whenever and wherever you shop!
 We scan the web to keep you an informed buyer making informed decisions!
 
 This backend is the brains behind our operations, running behind the scenes to crawl the internet and gather the most up-to-date information about your favorite products!
@@ -36,8 +36,7 @@ This backend is the brains behind our operations, running behind the scenes to c
 
 List any prerequisites for using or running the project.
 
-- **Node.js:** Version X.X.X
-- **Database:** Type and version
+- **python:** Version 3.10.9
 - Any additional software or configurations required.
 
 ### Installation
@@ -50,44 +49,14 @@ List any prerequisites for using or running the project.
    ```bash
    cd repository
    ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Set up environment variables:
+3. Set up environment variables:
    - Rename `.env.example` to `.env`
    - Update values in `.env` file as required.
-
+4. Install dependencies:
+   - hit 'f5'
+   - this should automatically install of the depenedencies that you need and get you started
+   - from here you should be able to use the azure function locally
 ---
-
-## Usage
-
-### Running the Server
-
-To start the server locally, run:
-
-```bash
-npm start
-```
-
-For development mode with live-reloading:
-
-```bash
-npm run dev
-```
-
-### Example Requests
-
-Provide example curl commands or HTTP request examples for key functionalities.
-
-Example:
-
-```bash
-curl -X GET http://localhost:3000/api/v1/resource
-```
-
----
-
 ## API Documentation
 
 Include or link to the API documentation.  
