@@ -19,21 +19,15 @@
 
 ## About the Project
 
-Provide a brief overview of your backend project. What problem does it solve? Why is it useful?
+This is the backend for the upcoming application "MerchHaven"! MerchHaven provides you with the best deals for the rarest fandom merchanise and novelty items whenever and wherever you shop!
+We scan the web to keep you an informed buyer making informed decisions!
 
-Example:  
-This backend application provides RESTful APIs for managing [specific use case]. It is built using [framework/technology] and supports [key features].
-
+This backend is the brains behind our operations, running behind the scenes to crawl the internet and gather the most up-to-date information about your favorite products!
 ---
 
 ## Features
 
-- **Feature 1:** Brief description
-- **Feature 2:** Brief description
-- **Feature 3:** Brief description
-
-Highlight any unique or important functionalities.
-
+<TO ADD LATER>
 ---
 
 ## Getting Started
@@ -42,8 +36,7 @@ Highlight any unique or important functionalities.
 
 List any prerequisites for using or running the project.
 
-- **Node.js:** Version X.X.X
-- **Database:** Type and version
+- **python:** Version 3.10.9
 - Any additional software or configurations required.
 
 ### Installation
@@ -56,44 +49,14 @@ List any prerequisites for using or running the project.
    ```bash
    cd repository
    ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Set up environment variables:
+3. Set up environment variables:
    - Rename `.env.example` to `.env`
    - Update values in `.env` file as required.
-
+4. Install dependencies:
+   - hit 'f5'
+   - this should automatically install of the depenedencies that you need and get you started
+   - from here you should be able to use the azure function locally
 ---
-
-## Usage
-
-### Running the Server
-
-To start the server locally, run:
-
-```bash
-npm start
-```
-
-For development mode with live-reloading:
-
-```bash
-npm run dev
-```
-
-### Example Requests
-
-Provide example curl commands or HTTP request examples for key functionalities.
-
-Example:
-
-```bash
-curl -X GET http://localhost:3000/api/v1/resource
-```
-
----
-
 ## API Documentation
 
 Include or link to the API documentation.  
@@ -120,11 +83,11 @@ Contributions are welcome! Please follow these steps to contribute:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project has no license and is not available for editing!
 
 ---
 
 ## Contact
 
-Your Name - [your-email@example.com](mailto:your-email@example.com)  
+Your Name - [ikechukwuanude@gmail.com](mailto:ikechukwuanude@gmail.com)  
 Project Link: [https://github.com/username/repository](https://github.com/username/repository)
