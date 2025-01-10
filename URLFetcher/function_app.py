@@ -66,7 +66,9 @@ def get_cosmos_items(container, query_id=None, max_items=100, isEnabled=True):
         logging.error(f"Error retrieving items from CosmosDB: {str(e)}")
         raise
 
-
+"""
+Table Functions
+"""
 def prepare_rows(urls):
     """
     Prepares the entities for batch upload by ensuring required fields.
@@ -85,7 +87,7 @@ def prepare_rows(urls):
         hash = url_to_hash(url)
         # initialize a new row
         rows.append({
-            "PartitionKey": str(hash[:3]),
+            "PartitionKey": str(hash[:5]),
             "RowKey": str(hash),
             "URL": str(url),
             "timeCreated": str(currentTime),
@@ -133,6 +135,15 @@ async def upsert_url_metadata(rows, mode="merge"):
 def upload_to_azure_table(productUrls):
 
     # Prepare the entities
+    """
+    Uploads a list of URLs to Azure Table Storage (async)
+    
+    Args:
+        productUrls (list): List of URLs to upload
+        
+    Returns:
+        None
+    """
     rows = prepare_rows(productUrls)
 
     # upsert the entities to Azure Table Storage
@@ -142,10 +153,7 @@ def upload_to_azure_table(productUrls):
         logging.error(f"Async Function Error: {str(e)}")
 
     # log the number of entities uploaded
-    logging.info(f"Uploaded {len(rows[:100])} URLs to Azure Table Storage")
-
-
-
+    logging.info(f"Uploaded {len(rows)} URLs to Azure Table Storage")
 
 def process_sitemap(domainMetadata):
 
@@ -189,8 +197,7 @@ def process_sitemap(domainMetadata):
 
     return productUrlsResult
 
-
-
+# entry point
 @app.route(route="URLFetcherFunc")
 def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -207,6 +214,7 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
 
         # Process in the Domain Metadata
         productUrlsDiscovered = process_sitemap(domainMetadata)
+
         logging.info(f"Found {len(productUrlsDiscovered)} total product URLs")
 
         # Upload to Azure Table Storage
