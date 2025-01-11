@@ -3,13 +3,16 @@ import logging
 import azure.functions as func
 from azure.cosmos import CosmosClient
 from azure.data.tables.aio import TableClient
+from azure.data.tables import TableClient as TableClientSync
 from azure.core.exceptions import AzureError
+from azure.storage.queue import QueueClient
 import json
 import asyncio
 import os
 from ProductSitemapURLFetcher import ProductSitemapURLFetcher
 from utilites._util_functions import url_to_hash
 from datetime import datetime
+import uuid
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -156,6 +159,75 @@ def upload_to_azure_table(productUrls):
     logging.info(f"Uploaded {len(rows)} URLs to Azure Table Storage")
 
 
+def query_urls_not_crawled():
+    # Initialize Table Client
+    """
+    Queries Azure Table Storage for entities where lastCrawlTime is NULL or empty
+
+    Returns:
+        list: List of entities from Azure Table Storage where lastCrawlTime is empty
+    """
+    table_client = TableClientSync.from_connection_string(
+        os.environ["AzureTableStorageConnectionString"],
+        os.environ["TableName"]
+    )
+
+    # Query entities where lastCrawlTime is NULL or empty
+    logging.info("Querying entities where lastCrawlTime is NULL or empty...")
+    parameters = {
+        "lastCrawlTime": ''
+    }
+    filter_query = "lastCrawlTime eq @lastCrawlTime"
+    entities = table_client.query_entities(query_filter=filter_query, parameters=parameters)
+
+    return entities
+
+def send_urls_to_queue(messages):
+
+    queue_client = QueueClient.from_connection_string(conn_str=os.environ["AzureTableStorageConnectionString"], queue_name="urldataqueue")
+
+    # create queue if it doesn't exist
+    try:
+        queue_client.create_queue()
+    except Exception as e:
+        logging.info(f"Queue already exists: {str(e)}")
+
+    # send messages
+    try:
+        ind = 0
+        for msg in messages:
+
+            logging.info(f"Sending message to queue: {msg}")
+            queue_client.send_message(msg)
+            logging.info(f"Sent message to queue: {msg}")
+            ind += 1
+
+        logging.info(f'{ind} messages sent to queue')
+    except Exception as e:
+        logging.error(f"Error sending messages to queue: {str(e)}")
+    
+def create_queue_messages(entities):
+    
+    logging.info('Creating queue messages...')
+    messages = []
+    try:
+        for entity in entities:
+            url = entity.get("URL")
+            rowKey = entity.get("RowKey")
+
+            message = json.dumps({
+                "url": url,
+                "rowKey": rowKey
+            })
+
+            messages.append(message)
+
+        logging.info('All queue messages created')
+    except Exception as e:
+        logging.error(f"Error creating queue messages: {str(e)}")
+    
+    return messages
+    
 
 def process_sitemap(domainMetadata):
 
@@ -242,10 +314,38 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
 
 # Get the delta urls from the url metadata that haven't been processed yet (last crawl time is null or older than last fetch time)
 @app.function_name(name="DeltaUrlsToQueueFunction")
-@app.timer_trigger(schedule="0 * * * * *", arg_name="myTimer", run_on_startup=True, use_monitor=False) 
+@app.timer_trigger(schedule="0 */10 * * * *", arg_name="myTimer", run_on_startup=True, use_monitor=False) 
 def timer_trigger(myTimer: func.TimerRequest) -> None:
-    
-    if myTimer.past_due:
-        logging.info('The timer is past due!')
 
-    logging.info('Python timer trigger function executed.')
+    logging.info('DeltaUrlsToQueueFunction timer trigger function started at %s.', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    # Query entities where lastCrawlTime is empty
+    entities = query_urls_not_crawled()
+
+    # create the messages
+    msgs = create_queue_messages(entities)
+
+    # Send Message to Queue
+    send_urls_to_queue(msgs)
+
+    # # create the entities
+    # entities = [
+    #     {
+    #         "RowKey": uuid.uuid4().hex,
+    #         "URL": "https://www.test-example.com"
+    #     },
+    #     {
+    #         "RowKey": uuid.uuid4().hex,
+    #         "URL": "https://www.test-example2.com"
+    #     },
+    #     {
+    #         "RowKey": uuid.uuid4().hex,
+    #         "URL": "https://www.test-example3.com"
+    #     }
+    # ]
+
+    # Send Message to Queue
+    # send_urls_to_queue(msgs[:10])
+
+    
+    logging.info('DeltaUrlsToQueueFunction timer trigger function completed at %s.', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))        
