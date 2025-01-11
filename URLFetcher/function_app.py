@@ -155,6 +155,8 @@ def upload_to_azure_table(productUrls):
     # log the number of entities uploaded
     logging.info(f"Uploaded {len(rows)} URLs to Azure Table Storage")
 
+
+
 def process_sitemap(domainMetadata):
 
     productUrlsResult = []
@@ -198,6 +200,7 @@ def process_sitemap(domainMetadata):
     return productUrlsResult
 
 # entry point
+@app.function_name(name="URLFetcherFunction")
 @app.route(route="URLFetcherFunc")
 def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -220,6 +223,10 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
         # Upload to Azure Table Storage
         upload_to_azure_table(productUrlsDiscovered)
 
+        # ===== TODO: MOVE TO A DIFFERENT FUNCTION =====
+
+        # TODO: Get all of the product URLs and move it to a queue
+        
         response = {
             "Product Urls Discovered": len(productUrlsDiscovered),
             "Sample Product Urls": productUrlsDiscovered[:10],
@@ -232,3 +239,13 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"Error processing domain metadata: {str(e)}")
         return func.HttpResponse(f"Error processing domain metadata: {str(e)}", status_code=500)
+
+# Get the delta urls from the url metadata that haven't been processed yet (last crawl time is null or older than last fetch time)
+@app.function_name(name="DeltaUrlsToQueueFunction")
+@app.timer_trigger(schedule="0 * * * * *", arg_name="myTimer", run_on_startup=True, use_monitor=False) 
+def timer_trigger(myTimer: func.TimerRequest) -> None:
+    
+    if myTimer.past_due:
+        logging.info('The timer is past due!')
+
+    logging.info('Python timer trigger function executed.')
