@@ -327,25 +327,5 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
 
     # Send Message to Queue
     send_urls_to_queue(msgs)
-
-    # # create the entities
-    # entities = [
-    #     {
-    #         "RowKey": uuid.uuid4().hex,
-    #         "URL": "https://www.test-example.com"
-    #     },
-    #     {
-    #         "RowKey": uuid.uuid4().hex,
-    #         "URL": "https://www.test-example2.com"
-    #     },
-    #     {
-    #         "RowKey": uuid.uuid4().hex,
-    #         "URL": "https://www.test-example3.com"
-    #     }
-    # ]
-
-    # Send Message to Queue
-    # send_urls_to_queue(msgs[:10])
-
     
     logging.info('DeltaUrlsToQueueFunction timer trigger function completed at %s.', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))        
