@@ -42,7 +42,22 @@ class CrawlerUtil:
             return urls
         
         except requests.RequestException as e:
-            self.logger.error(f"Error fetching sitemap {sitemap_url}: {e}")
+            # If we got here, it could be a connection error or another network issue
+            # so there may not be a response object
+            if hasattr(e, 'response') and e.response is not None:
+                self.logger.error(
+                    f"RequestException fetching sitemap {sitemap_url}. "
+                    f"Status code: {e.response.status_code}, reason: {e.response.reason}, error: {e}"
+                )
+
+                # export the response text to a file
+                response_text = e.response.text
+                hash_value = hashlib.sha256(response_text.encode()).hexdigest()
+                filename = f"error_page_{hash_value[0:10]}.html"
+                with open(filename, "w") as f:
+                    f.write(response_text)
+            else:
+                self.logger.error(f"RequestException fetching sitemap {sitemap_url}: {e}")
             return []
         except ET.ParseError as e:
             self.logger.error(f"Error parsing sitemap XML: {e}")

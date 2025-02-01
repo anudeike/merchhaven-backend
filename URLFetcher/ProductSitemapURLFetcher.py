@@ -68,16 +68,37 @@ class ProductSitemapURLFetcher:
 
 
 # TODO: Add tests
-def tests():
+def testURLConfigurations(config):
 
-    boxLunchConfig = {
+    crawler = ProductSitemapURLFetcher(config)
+
+    # one function to do all of the work
+    crawler.fetch_product_urls()
+
+
+boxLunchConfig = {
         'base_url': 'https://www.boxlunch.com/',
         'sitemap_url': 'https://www.boxlunch.com/sitemap_index.xml',
         'namespace': {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'},
         'headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
     }
 
-    crawler = ProductSitemapURLFetcher(boxLunchConfig)
+entertainmentEarthConfig = {
+        'base_url': 'https://www.entertainmentearth.com/',
+        'sitemap_url': 'https://www.entertainmentearth.com/sitemap/sitemap_index.xml',
+        'namespace': {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'},
+        'headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    }
 
-    # one function to do all of the work
-    crawler.fetch_product_urls()
+enchancedHeaders = {
+    "authority": "www.google.com",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-US,en;q=0.9",
+    "cache-control": "max-age=0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+}
+
+entertainmentEarthConfig['headers'] = enchancedHeaders
+
+# test
+testURLConfigurations(entertainmentEarthConfig)

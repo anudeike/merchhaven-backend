@@ -293,11 +293,7 @@ def URLFetcherFunc(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f"Found {len(productUrlsDiscovered)} total product URLs")
 
         # Upload to Azure Table Storage
-        upload_to_azure_table(productUrlsDiscovered)
-
-        # ===== TODO: MOVE TO A DIFFERENT FUNCTION =====
-
-        # TODO: Get all of the product URLs and move it to a queue
+        # upload_to_azure_table(productUrlsDiscovered)
         
         response = {
             "Product Urls Discovered": len(productUrlsDiscovered),
